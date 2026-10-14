@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A phone and a TV for a radar sensor | Jack Hall</title>
+  <meta name="description" content="An open-source contribution case study: a phone app over Bluetooth LE and Wi-Fi, TV and scoreboard displays, and a hardened LAN server for a radar sensor that tracks sports balls.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="../">jack hall</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../#projects">Projects</a></li>
+          <li><a href="../#case-studies">Case studies</a></li>
+          <li><a href="../#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap case">
+    <article>
+      <header class="case-head">
+        <p class="kicker">Case study · Mobile and embedded Linux</p>
+        <h1>A phone app and a TV display for a radar sensor</h1>
+        <p class="dek">An open-source radar sensor for sports ball tracking showed each shot on one small touchscreen. I gave it a phone app that works with no Wi-Fi, a TV display, and a LAN server that keeps other devices away from its settings.</p>
+        <dl class="facts">
+          <div><dt>Role</dt><dd>Open-source contributor, in my own fork: mobile app, Bluetooth LE link, display UI and server hardening</dd></div>
+          <div><dt>When</dt><dd>June to August 2026</dd></div>
+          <div><dt>Scope</dt><dd>React Native app, BLE GATT service with HMAC pairing, React display UI, Python server, flight model, performance pass</dd></div>
+        </dl>
+      </header>
+
+      <section class="section" aria-labelledby="context">
+        <h2 id="context">Context</h2>
+        <div class="section-body">
+          <p>The device is an open-source radar sensor for sports ball tracking. A single-board Linux computer reads a Doppler radar for speed and smaller radars for angle, and a Python server pushes each shot over a WebSocket to a React page on a small touchscreen beside the sensor.</p>
+          <p>Other contributors own the radar side: detection, spin and angle extraction. I worked on what sits around it. From June to August I made 104 commits in my own fork, across the phone app, the display, the server and the Bluetooth link between them.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="problem">
+        <h2 id="problem">Problem</h2>
+        <div class="section-body">
+          <p>You could see a shot in two places: the touchscreen, or a browser on the same network. Outdoors there is often no Wi-Fi you can join. Indoors you want the numbers on a TV across the room, driven by the TV's own remote.</p>
+          <p>Any new path in had to stay safe on a shared network. The server took commands that change radar settings and served a camera stream. A phone on the guest Wi-Fi should not be able to do either.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="measured">
+        <h2 id="measured">What I measured</h2>
+        <div class="section-body">
+          <h3>Three hot paths</h3>
+          <p>In August I timed code that runs per frame, per request or per page load, and changed three paths. The CFAR time is the median of 20 runs.</p>
+
+          <figure class="figure">
+            <figcaption>Before and after, per change</figcaption>
+            <table class="data stacked">
+              <thead>
+                <tr><th scope="col">Path</th><th scope="col">Before</th><th scope="col">After</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">OS-CFAR noise estimate, 2,048-bin spectrum</th>
+                  <td data-label="Before">26.4 ms</td>
+                  <td data-label="After">1.25 ms, same detections bit for bit</td>
+                </tr>
+                <tr>
+                  <th scope="row">History scan of a 2.5 MB session file</th>
+                  <td data-label="Before">26.3 ms</td>
+                  <td data-label="After">3.7 ms</td>
+                </tr>
+                <tr>
+                  <th scope="row">Display UI main bundle</th>
+                  <td data-label="Before">672 kB (205 kB gzip)</td>
+                  <td data-label="After">317 kB (100 kB gzip)</td>
+                </tr>
+              </tbody>
+            </table>
+          </figure>
+          <p>The CFAR loop built a fresh training array for every bin. A sliding-window view takes the median of every window in one call. The history scan parsed every line of every session file, including raw capture rows that carry 4,096 I and 4,096 Q samples each, and a substring test now skips those before the JSON parser sees them. The bundle carried 15 language catalogs that most users never load, so I moved them into on-demand chunks and kept English in the main bundle.</p>
+
+          <h3>A flight model held to reference ranges</h3>
+          <p>The server simulates each ball's flight. I rebuilt the model with published drag and lift coefficients that depend on spin, and a 1 ms RK4 step. Regression tests hold the simulated trajectories inside reference ranges for typical shots. I did not run a side-by-side comparison against another tracking system.</p>
+
+          <h3>What I did not measure</h3>
+          <p>I have no recorded numbers for the phone app on hardware: Bluetooth latency, reconnect success rate or battery cost. My manual test plan has Bluetooth and Wi-Fi cases, and their result rows are still empty.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="changed">
+        <h2 id="changed">What I changed</h2>
+        <div class="section-body">
+          <h3>A phone app with two transports</h3>
+          <p>I built a React Native app in TypeScript that runs Wi-Fi and Bluetooth LE at the same time. A WebSocket carries shots when the phone shares the sensor's network. A custom BLE GATT service carries them when it does not, and Wi-Fi wins when both are up. Screens read one merged connection, so none of them branches on transport.</p>
+          <p>Shots land in an encrypted SQLite store. The app keys each shot on several fields together, so two real shots with the same timestamp both persist. It buffers shots that arrive before the session row exists. On top of that store sit lifetime stats, trend charts, a dispersion chart, and a 3D trajectory view that runs the same flight model as the server.</p>
+
+          <h3>Bluetooth pairing without sending the secret</h3>
+          <p>I wrote the GATT peripheral on the sensor in Python and the client in the app. Pairing happens once: the touchscreen shows a QR code holding a 32-byte secret, and the server serves that code only to the device itself. On every connection the sensor publishes a fresh nonce, the phone answers with an HMAC-SHA256 of it, and the sensor checks the answer with a constant-time compare. Nonces rotate every 4 minutes and expire after 5.</p>
+          <p>The app's JavaScript engine ships no WebCrypto, so I wrote the HMAC in plain TypeScript and tested it against the RFC 4231 vectors. A shot over 512 bytes falls back to short field names before the sensor truncates it. A dropped link retries after 3, 6 and 12 seconds.</p>
+
+          <h3>A display for the TV across the room</h3>
+          <p>I redesigned the display UI around three view modes: the interactive touchscreen view, a passive scoreboard for a second screen, and a phone web remote that relays D-pad keys to the display. On a TV, a small Python service turns HDMI-CEC remote presses into arrow keys, and a USB IR receiver covers TVs without CEC. The launcher detects whether the screen is a TV or a monitor and picks the first view to match. A low-power flag drops the backdrop blur that the board's GPU struggles with.</p>
+          <p>The display UI has string catalogs for 16 languages. Controls carry ARIA roles and 44 px minimum targets, and they respect reduced motion. Reduce-motion, high-contrast and large-text settings set on the phone carry over to the display.</p>
+
+          <h3>A review of the LAN surface</h3>
+          <ul>
+            <li>Radar settings changes now need the admin token. Before, any client on the network could send them.</li>
+            <li>The camera stream got its own token. Its URL carries the token, and that URL lands in access logs, so it must not unlock anything else.</li>
+            <li>The cross-origin allowlist works now. The server had handed the compiled LAN pattern to the CORS library as a literal string.</li>
+            <li>The pairing endpoint checks the socket's peer address. It had trusted <code>X-Forwarded-For</code>, which any host on the LAN can set.</li>
+            <li>The server binds to localhost by default, takes only known accessibility keys from clients, and refuses non-HTTPS URLs in the cloud uploader.</li>
+          </ul>
+
+          <h3>Test plans for what a test runner cannot reach</h3>
+          <p>TV remote buses, IR receivers, screen readers and a large TV driven by a small board sit outside the automated test suites. I wrote 11 manual test plans for those paths. Each one names the hardware, the steps, what passing looks like, and the logs to attach on a failure.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="result">
+        <h2 id="result">Result</h2>
+        <div class="section-body">
+          <p>The fork now has a phone app that receives shots over Wi-Fi or Bluetooth, and a display that runs on a TV under its own remote. At my last commit in August 2026, 751 Python tests and 110 UI tests passed. The CFAR estimate runs about 21 times faster, the history scan about 7 times faster, and the main bundle is less than half its old size.</p>
+          <p>The phone and TV paths have no recorded hardware results yet, so I cannot claim numbers for them.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="differently">
+        <h2 id="differently">What I'd do differently</h2>
+        <div class="section-body">
+          <ul>
+            <li><strong>Review the network code before it ships.</strong> I had written the broken CORS allowlist and the forwarded-header check myself a few days before the review found them.</li>
+            <li><strong>Keep build output out of git from the first commit.</strong> A stale Android JavaScript bundle checked into the repo hid every UI change from my debug builds until I traced it. Removing it later deleted about 176,000 lines.</li>
+            <li><strong>Measure the Bluetooth link before building screens on it.</strong> Latency and reconnect numbers from a bench run would have told me whether the 512-byte fallback and the retry schedule were the right calls.</li>
+          </ul>
+        </div>
+      </section>
+    </article>
+
+    <nav class="case-nav" aria-label="Case studies">
+      <a href="release-structure.html">Previous: Shipping fixes with no rollback</a>
+      <a href="../#case-studies">All case studies</a>
+    </nav>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <p>© 2026 Jack Hall</p>
+      <p><a href="mailto:johnragonhall@gmail.com">johnragonhall@gmail.com</a></p>
+    </div>
+  </footer>
+</body>
+</html>
