@@ -70,26 +70,53 @@
       <div class="section-body">
         <ul class="entries">
           <li>
-            <h3><a class="repo" href="https://github.com/johnragonhall/twinflow">twinflow</a></h3>
+            <h3><a class="repo" href="https://github.com/ragonxdragon/twinflow">twinflow</a></h3>
             <p>A digital twin of a warehouse receiving and putaway operation. A discrete-event model runs against a simulated device fleet over MQTT, and a Lean Six Sigma engine judges both the live telemetry and the model's own predictions. The first build phase is closed, and the roadmap and its evidence rules are public.</p>
             <p class="meta">Python · Apache-2.0 or commercial</p>
           </li>
           <li>
-            <h3><a class="repo" href="https://github.com/johnragonhall/spbconform">spbconform</a></h3>
+            <h3><a class="repo" href="https://github.com/ragonxdragon/spbconform">spbconform</a></h3>
             <p>The Eclipse Sparkplug B 3.0.0 assertion table, and a runner that checks an edge node against it. It carries all 299 assertions the specification marks as testable, with an executable check for the 143 an in-process harness can observe and a recorded reason for each of the other 156.</p>
             <p class="meta">Python · MIT · zero dependencies</p>
           </li>
           <li>
-            <h3><a class="repo" href="https://github.com/johnragonhall/secom-spc">secom-spc</a></h3>
+            <h3><a class="repo" href="https://github.com/ragonxdragon/secom-spc">secom-spc</a></h3>
             <p>Statistical process control on the UCI SECOM semiconductor manufacturing dataset, with a fail-prediction study that reports what the data can and cannot support.</p>
             <p class="meta">Python</p>
           </li>
-          <!-- Hidden until the repo is published:
           <li>
-            <h3><a class="repo" href="https://github.com/johnragonhall/sparkplug-pipeline">sparkplug-pipeline</a></h3>
-            <p>A Sparkplug B data pipeline.</p>
+            <h3><a class="repo" href="https://github.com/ragonxdragon/sparkplug-pipeline">sparkplug-pipeline</a></h3>
+            <p>Industrial telemetry from a Sparkplug B edge node, over MQTT, into TimescaleDB, from one <code>docker compose up</code>. The simulator reorders, duplicates, corrupts and replays messages late on purpose, and an integration test checks that each case lands where it should. Ingest measured at a median of about 4,200 messages per second on a laptop.</p>
+            <p class="meta">Python · TimescaleDB · Apache-2.0</p>
           </li>
-          -->
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="tools" aria-labelledby="tools-h">
+      <h2 id="tools-h">Engineering tools</h2>
+      <div class="section-body">
+        <ul class="entries">
+          <li>
+            <h3><a class="repo" href="https://github.com/ragonxdragon/performance-ladder-review">performance-ladder-review</a></h3>
+            <p>A measure-first performance skill for AI coding agents: delete before you tune, no claim without a number, and a <code>PERF:</code> marker on every decision. Results from three of my projects are charted in the README.</p>
+            <p class="meta">Claude Code skill · MIT</p>
+          </li>
+          <li>
+            <h3><a class="repo" href="https://github.com/ragonxdragon/git-quality-gates">git-quality-gates</a></h3>
+            <p>Git hooks and CI gates for conventional commits, a regression-test rule on fixes, comment and prose standards, and a copyleft license allowlist, with every bypass logged.</p>
+            <p class="meta">Python · MIT</p>
+          </li>
+          <li>
+            <h3><a class="repo" href="https://github.com/ragonxdragon/claude-code-setup">claude-code-setup</a></h3>
+            <p>A template Claude Code configuration: layered context, generated routing, guard and nudge hooks with a self-test, and validators in CI.</p>
+            <p class="meta">Template · MIT</p>
+          </li>
+          <li>
+            <h3><a class="repo" href="https://github.com/ragonxdragon/rfid-reader-emulator">rfid-reader-emulator</a></h3>
+            <p>An HTTP/XML RFID reader emulator with seeded tag populations and fault injection, for bench-testing firmware without hardware.</p>
+            <p class="meta">Python · MIT</p>
+          </li>
         </ul>
       </div>
     </section>
@@ -100,17 +127,17 @@
         <p>Small, tested pieces of code, published as gists.</p>
         <ul class="entries">
           <li>
-            <h3><a class="repo" href="https://gist.github.com/johnragonhall/40e022699158dc6cc4e20941b1def484">Recovery ladder</a></h3>
+            <h3><a class="repo" href="https://gist.github.com/ragonxdragon/40e022699158dc6cc4e20941b1def484">Recovery ladder</a></h3>
             <p>Escalating self-recovery for unattended embedded devices, with boot-loop detection.</p>
             <p class="meta">C++17 · no heap · host-testable</p>
           </li>
           <li>
-            <h3><a class="repo" href="https://gist.github.com/johnragonhall/dc041808503e7cbfaa6d99bd95b8b2a3">Cellular backoff</a></h3>
+            <h3><a class="repo" href="https://gist.github.com/ragonxdragon/dc041808503e7cbfaa6d99bd95b8b2a3">Cellular backoff</a></h3>
             <p>Exponential backoff with full jitter, a deadline and a circuit breaker for flaky cellular links.</p>
             <p class="meta">C++17 · no allocation · tested</p>
           </li>
           <li>
-            <h3><a class="repo" href="https://gist.github.com/johnragonhall/897b5ff8f95737c4feb72646c48edca1">Nelson rules checker</a></h3>
+            <h3><a class="repo" href="https://gist.github.com/ragonxdragon/897b5ff8f95737c4feb72646c48edca1">Nelson rules checker</a></h3>
             <p>Nelson rules 1 to 8 for individuals control charts.</p>
             <p class="meta">Python 3.12 · standard library only · tested</p>
           </li>
@@ -150,7 +177,7 @@
           <dt>Email</dt>
           <dd><a href="mailto:johnragonhall@gmail.com">johnragonhall@gmail.com</a></dd>
           <dt>GitHub</dt>
-          <dd><a href="https://github.com/johnragonhall">github.com/johnragonhall</a></dd>
+          <dd><a href="https://github.com/ragonxdragon">github.com/ragonxdragon</a></dd>
           <dt>LinkedIn</dt>
           <dd><a href="https://www.linkedin.com/in/johnragonhall">linkedin.com/in/johnragonhall</a></dd>
         </dl>
