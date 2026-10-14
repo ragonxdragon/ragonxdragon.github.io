@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jack Hall</title>
+  <meta name="description" content="Jack Hall, IoT and embedded systems engineer. Firmware that stays connected, and the systems that read it.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f6f8fa" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="./">jack hall</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#code-samples">Code</a></li>
+          <li><a href="#case-studies">Case studies</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <section class="hero" aria-labelledby="name">
+      <div>
+        <p class="kicker">Embedded / IoT / Industrial data</p>
+        <h1 id="name">Jack Hall</h1>
+        <p class="tagline">Firmware that stays connected, and the systems that read it.</p>
+        <p class="stack">C/C++&nbsp;· Python&nbsp;· ESP32&nbsp;· LTE&nbsp;· MQTT&nbsp;· Azure&nbsp;IoT</p>
+      </div>
+      <figure class="signal">
+        <svg viewBox="-2 0 444 92" role="img" aria-labelledby="signal-title">
+          <title id="signal-title">Signal path: an RFID tag, read by an ESP32 and LTE gateway, published through an MQTT broker to Azure IoT Hub</title>
+          <line class="wire" x1="0" y1="34" x2="436" y2="34"/>
+          <circle class="packet" cx="0" cy="34" r="4.5"/>
+          <rect class="node" x="0" y="12" width="88" height="44" rx="8"/>
+          <text class="label" x="44" y="39">tag</text>
+          <text class="sub" x="44" y="82">RFID</text>
+          <rect class="node-key" x="116" y="12" width="88" height="44" rx="8"/>
+          <text class="label label-key" x="160" y="39">gateway</text>
+          <text class="sub" x="160" y="82">ESP32 + LTE</text>
+          <rect class="node" x="232" y="12" width="88" height="44" rx="8"/>
+          <text class="label" x="276" y="39">broker</text>
+          <text class="sub" x="276" y="82">MQTT</text>
+          <rect class="node" x="348" y="12" width="88" height="44" rx="8"/>
+          <text class="label" x="392" y="39">cloud</text>
+          <text class="sub" x="392" y="82">IoT Hub</text>
+        </svg>
+      </figure>
+    </section>
+
+    <section class="section" aria-labelledby="what">
+      <h2 id="what">What I do</h2>
+      <div class="section-body">
+        <p>I build and support firmware for devices that live in the field. My current work is an ESP32 gateway that reads RFID tags over Ethernet, reaches the cloud over LTE or Wi&#8209;Fi, takes its configuration from an Azure IoT device twin, and updates itself over the air. Most of my time goes to the parts that decide whether a unit in a customer's back room keeps working: TLS on a small memory budget, recovery when a modem or a link goes quiet, and diagnostics that tell a support desk what broke without a site visit.</p>
+        <p>Outside client work I build open tools for industrial data, from Sparkplug B conformance testing to statistical process control. I also write the release plans, test gates and support models that keep a fleet running. I'm based in the United States.</p>
+      </div>
+    </section>
+
+    <section class="section" id="projects" aria-labelledby="projects-h">
+      <h2 id="projects-h">Selected projects</h2>
+      <div class="section-body">
+        <ul class="entries">
+          <li>
+            <h3><a class="repo" href="https://github.com/johnragonhall/twinflow">twinflow</a></h3>
+            <p>A digital twin of a warehouse receiving and putaway operation. A discrete-event model runs against a simulated device fleet over MQTT, and a Lean Six Sigma engine judges both the live telemetry and the model's own predictions. The first build phase is closed, and the roadmap and its evidence rules are public.</p>
+            <p class="meta">Python · Apache-2.0 or commercial</p>
+          </li>
+          <li>
+            <h3><a class="repo" href="https://github.com/johnragonhall/spbconform">spbconform</a></h3>
+            <p>The Eclipse Sparkplug B 3.0.0 assertion table, and a runner that checks an edge node against it. It carries all 299 assertions the specification marks as testable, with an executable check for the 143 an in-process harness can observe and a recorded reason for each of the other 156.</p>
+            <p class="meta">Python · MIT · zero dependencies</p>
+          </li>
+          <li>
+            <h3><a class="repo" href="https://github.com/johnragonhall/secom-spc">secom-spc</a></h3>
+            <p>Statistical process control on the UCI SECOM semiconductor manufacturing dataset, with a fail-prediction study that reports what the data can and cannot support.</p>
+            <p class="meta">Python</p>
+          </li>
+          <!-- Hidden until the repo is published:
+          <li>
+            <h3><a class="repo" href="https://github.com/johnragonhall/sparkplug-pipeline">sparkplug-pipeline</a></h3>
+            <p>A Sparkplug B data pipeline.</p>
+          </li>
+          -->
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="code-samples" aria-labelledby="samples-h">
+      <h2 id="samples-h">Code samples</h2>
+      <div class="section-body">
+        <p>Small, tested pieces of code, published as gists.</p>
+        <ul class="entries">
+          <li>
+            <h3><a class="repo" href="https://gist.github.com/johnragonhall/40e022699158dc6cc4e20941b1def484">Recovery ladder</a></h3>
+            <p>Escalating self-recovery for unattended embedded devices, with boot-loop detection.</p>
+            <p class="meta">C++17 · no heap · host-testable</p>
+          </li>
+          <li>
+            <h3><a class="repo" href="https://gist.github.com/johnragonhall/dc041808503e7cbfaa6d99bd95b8b2a3">Cellular backoff</a></h3>
+            <p>Exponential backoff with full jitter, a deadline and a circuit breaker for flaky cellular links.</p>
+            <p class="meta">C++17 · no allocation · tested</p>
+          </li>
+          <li>
+            <h3><a class="repo" href="https://gist.github.com/johnragonhall/897b5ff8f95737c4feb72646c48edca1">Nelson rules checker</a></h3>
+            <p>Nelson rules 1 to 8 for individuals control charts.</p>
+            <p class="meta">Python 3.12 · standard library only · tested</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="case-studies" aria-labelledby="cases-h">
+      <h2 id="cases-h">Case studies</h2>
+      <div class="section-body">
+        <p>Three write-ups from client work: two from a firmware engagement with an enterprise client, one from a computer vision proof of concept. I have left out names, sites and figures that could identify the clients.</p>
+        <ul class="entries">
+          <li>
+            <h3><a href="case-studies/field-diagnostics.html">Gateway or device: placing an upload failure</a></h3>
+            <p>Every unit on a test channel reported failed uploads. Laptop replays, failure timing and one TLS detail split the symptom into a gateway stall and a firmware bug, each with its own owner.</p>
+            <p class="meta">Field diagnostics · ESP32, mutual TLS · 2026</p>
+          </li>
+          <li>
+            <h3><a href="case-studies/vision-pick-audit.html">Checking pick accuracy with a camera model</a></h3>
+            <p>A camera model trained to count seven look-alike items lifted order accuracy from a 72.0% hand-picking baseline to 94.1%, and its remaining errors pointed back at the packing process.</p>
+            <p class="meta">Computer vision · accuracy audit · 2023</p>
+          </li>
+          <li>
+            <h3><a href="case-studies/release-structure.html">Shipping firmware fixes to a fleet with no rollback</a></h3>
+            <p>A change catalogue, a release menu the client could reorder, bench and QA gates ahead of production, and release notes that describe only the release.</p>
+            <p class="meta">Release engineering · OTA, QA gates · 2026</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="contact" aria-labelledby="contact-h">
+      <h2 id="contact-h">Contact</h2>
+      <div class="section-body">
+        <p>Email is the fastest way to reach me.</p>
+        <dl class="contact">
+          <dt>Email</dt>
+          <dd><a href="mailto:johnragonhall@gmail.com">johnragonhall@gmail.com</a></dd>
+          <dt>GitHub</dt>
+          <dd><a href="https://github.com/johnragonhall">github.com/johnragonhall</a></dd>
+          <dt>LinkedIn</dt>
+          <dd><a href="https://www.linkedin.com/in/johnragonhall">linkedin.com/in/johnragonhall</a></dd>
+        </dl>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <p>© 2026 Jack Hall</p>
+      <p>United States</p>
+    </div>
+  </footer>
+</body>
+</html>

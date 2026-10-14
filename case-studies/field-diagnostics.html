@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Placing an upload failure | Jack Hall</title>
+  <meta name="description" content="A field diagnostics case study: how laptop replays, failure timing and one TLS detail split a fleet-wide upload failure into a gateway stall and a firmware bug.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="../">jack hall</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../#projects">Projects</a></li>
+          <li><a href="../#case-studies">Case studies</a></li>
+          <li><a href="../#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap case">
+    <article>
+      <header class="case-head">
+        <p class="kicker">Case study · Field diagnostics</p>
+        <h1>Gateway or device: placing an upload failure</h1>
+        <p class="dek">Every unit on a test channel reported the same failed upload. The evidence split it into two faults with two different owners.</p>
+        <dl class="facts">
+          <div><dt>Role</dt><dd>Firmware and technical lead</dd></div>
+          <div><dt>When</dt><dd>September to October 2026</dd></div>
+          <div><dt>Stack</dt><dd>ESP32, LTE and Wi-Fi, mutual TLS, Azure IoT Hub device twins, Python</dd></div>
+        </dl>
+      </header>
+
+      <section class="section" aria-labelledby="context">
+        <h2 id="context">Context</h2>
+        <div class="section-body">
+          <p>I lead the firmware for a cellular RFID gateway that an enterprise client runs at its customers' sites. Each unit is an ESP32 with an LTE modem and Wi-Fi, an Ethernet link to an RFID reader, and an Azure IoT Hub device twin that carries its configuration and status. Every 60 seconds it posts the tags it has read to the client's REST API over mutual TLS.</p>
+          <p>When an upload gets no answer, the firmware waits out a 20-second read, writes a status of -1 to the twin, and tries again on the next cycle. In September 2026 every unit on the client's QA channel showed -1. In October the production units showed it too. The older production firmware restarts after twelve failed uploads, so the production units that were online rebooted every four to six minutes.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="problem">
+        <h2 id="problem">Problem</h2>
+        <div class="section-body">
+          <p>A -1 says the reply never arrived. It says nothing about why. The cause could sit in the device (memory, the TLS stack, a bad body), in the network path (some guest Wi-Fi networks inspect TLS), in the credentials, or in the API itself, and each of those has a different owner.</p>
+          <p>Guess wrong and you pay for it with a firmware release that fixes nothing, or a site visit to a unit that was fine. I wanted evidence that put the fault on one side of the wire before anyone changed code.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="measured">
+        <h2 id="measured">What I measured</h2>
+        <div class="section-body">
+          <h3>Take the device out</h3>
+          <p>From a laptop I replayed the exact request the firmware sends, with the same client certificate. The QA API completed the mutual-TLS handshake and then sent nothing for 30 seconds. On production, one well-formed request finished its handshake in 472 ms and then also got no reply in 30 seconds, while a request with no credentials drew a 401 in about a second. The route was up and checking credentials, and authenticated requests stalled behind that check. A laptop with no firmware on it failed the same way, which put the stall in the gateway.</p>
+
+          <h3>Read the credentials</h3>
+          <p>Once the QA gateway answered again, the same request with the current client certificate returned 201 in about 300 ms. An expired certificate drew a 403 and no certificate drew a 401. With those three responses mapped, I could read a unit's credential state from its status field alone.</p>
+          <p>The QA gateway recovered on its own in October 2026. The next boot of a QA unit uploaded with HTTP 201 on unchanged firmware.</p>
+
+          <h3>Time the failure</h3>
+          <p>One unit kept failing after the gateway recovered. Twelve uploads failed in under three minutes, about 15 seconds per cycle. A unit stuck behind a silent gateway spends the full 20-second read on every attempt. This one failed faster than that, so the fault sat on the device.</p>
+          <p>My first suspect was internal heap. The unit's largest free block was 32,756 bytes, against 63,476 bytes on a unit whose upload succeeded. I logged it as unproven, and the next piece of evidence replaced it.</p>
+
+          <h3>Follow the bytes</h3>
+          <p>The unit failed fast on every cycle, so I looked at what the device does between opening the connection and reading the reply. I read the TLS client in the Arduino-ESP32 core that the field firmware builds on. Its <code>write()</code> sends one TLS record, which holds at most 16,384 bytes, and the print path above it does not loop. A body over 16 KB went out cut short, and the API sat waiting for the rest.</p>
+          <p>A replay settled it. A 20,985-byte body cut at 16,384 bytes got nothing back in 60 seconds, and the full body got a 201 in half a second. Bodies that size are routine on a busy shelf: at 500 tags an uncompressed upload runs about 26 KB.</p>
+
+          <figure class="figure">
+            <figcaption>Where each test placed the fault</figcaption>
+            <table class="data stacked">
+              <thead>
+                <tr><th scope="col">Test</th><th scope="col">Result</th><th scope="col">Points to</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Laptop replay, same certificate, during the stall</th>
+                  <td data-label="Result">Handshake completes, no reply in 30 s</td>
+                  <td data-label="Points to"><span class="points">gateway</span></td>
+                </tr>
+                <tr>
+                  <th scope="row">Request with no credentials</th>
+                  <td data-label="Result">401 in about 1 s</td>
+                  <td data-label="Points to"><span class="points neutral">route is up</span></td>
+                </tr>
+                <tr>
+                  <th scope="row">Current, expired and missing certificate</th>
+                  <td data-label="Result">201, 403, 401</td>
+                  <td data-label="Points to"><span class="points neutral">credentials readable</span></td>
+                </tr>
+                <tr>
+                  <th scope="row">One unit's failure timing after recovery</th>
+                  <td data-label="Result">About 15 s per failed cycle, under the 20 s read</td>
+                  <td data-label="Points to"><span class="points">device</span></td>
+                </tr>
+                <tr>
+                  <th scope="row">Replay of a body cut at 16,384 bytes</th>
+                  <td data-label="Result">No reply in 60 s; full body 201 in 0.5 s</td>
+                  <td data-label="Points to"><span class="points">device write path</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="changed">
+        <h2 id="changed">What I changed</h2>
+        <div class="section-body">
+          <ul>
+            <li>A write loop that sends the body in 4 KB chunks, handles a stalled or dropped socket, and feeds the watchdog between chunks. The firmware now counts any 2xx as accepted. Before, it matched a sentence in the 201 body.</li>
+            <li>TLS buffers of 4 KB and up moved from internal RAM to PSRAM, which leaves the internal heap for everything else.</li>
+            <li>The device self-test reports the TLS error code and labels allocation failures as low memory, so the twin names the next failure of this kind.</li>
+          </ul>
+          <p>I tested the extracted write helper on the host first, where all 7 cases passed. Then I ported both changes to the development line, where all 18 native test suites passed.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="result">
+        <h2 id="result">Result</h2>
+        <div class="section-body">
+          <p>On the fixed build the failing unit uploaded with a 201 every cycle, and its largest free internal block rose to 86 to 94 KB, up from 32,756 bytes.</p>
+          <p>The QA stall belonged to the client, and it cleared without a firmware change. The production stall was still open with the client when I wrote this in October 2026.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="differently">
+        <h2 id="differently">What I'd do differently</h2>
+        <div class="section-body">
+          <ul>
+            <li><strong>Report status on a timer.</strong> On this firmware the status record rides on a successful upload, and its counters freeze at the last success. A unit whose uploads fail goes quiet in the twin at the moment you most need to hear from it.</li>
+            <li><strong>Reproduce payload-size failures on a bench emulator first.</strong> A local server that logs the bytes it receives shows a cut-short body in one run, and it puts large-body cases into the test plan before any build reaches a unit.</li>
+            <li><strong>Build the replay harness first.</strong> Replaying the firmware's exact request from a laptop answered in minutes what the twin could not answer at all.</li>
+          </ul>
+        </div>
+      </section>
+    </article>
+
+    <nav class="case-nav" aria-label="Case studies">
+      <a href="../#case-studies">All case studies</a>
+      <a href="vision-pick-audit.html">Next: Checking picks with a camera</a>
+    </nav>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <p>© 2026 Jack Hall</p>
+      <p><a href="mailto:johnragonhall@gmail.com">johnragonhall@gmail.com</a></p>
+    </div>
+  </footer>
+</body>
+</html>

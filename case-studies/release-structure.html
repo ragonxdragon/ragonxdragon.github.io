@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shipping fixes with no rollback | Jack Hall</title>
+  <meta name="description" content="A release engineering case study: turning a long backlog of firmware fixes into a short menu of releases, gated on the bench and in QA before production.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="../">jack hall</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../#projects">Projects</a></li>
+          <li><a href="../#case-studies">Case studies</a></li>
+          <li><a href="../#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap case">
+    <article>
+      <header class="case-head">
+        <p class="kicker">Case study · Release engineering</p>
+        <h1>Shipping firmware fixes to a fleet with no rollback</h1>
+        <p class="dek">More than two hundred commits separated the field firmware from the development line. I turned them into a short list of releases the client could choose from, each one proven on the bench and in QA before production.</p>
+        <dl class="facts">
+          <div><dt>Role</dt><dd>Technical lead and release owner</dd></div>
+          <div><dt>When</dt><dd>September to October 2026</dd></div>
+          <div><dt>Stack</dt><dd>ESP32 over-the-air updates, Azure IoT Hub device twins, GitHub Actions</dd></div>
+        </dl>
+      </header>
+
+      <section class="section" aria-labelledby="context">
+        <h2 id="context">Context</h2>
+        <div class="section-body">
+          <p>The field units ran an older release line. The development line had moved ahead by 233 non-merge commits: watchdogs, recovery ladders, diagnostics and a redesigned status light.</p>
+          <p>Two facts shaped every decision about moving that work to the field. The field firmware had no OTA rollback, so a bad update meant a site visit. And the update trigger compared version labels as plain text, so the only remote recovery was to point a unit's twin back at the previous image.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="problem">
+        <h2 id="problem">Problem</h2>
+        <div class="section-body">
+          <p>I had to decide which changes go to the field, in what order, and how to prove each release before it touched a production unit. The client had to own the priorities.</p>
+          <p>Each OTA costs about 1.2 MB per unit on cellular and has no undo. Builds cost nothing, so commits, pull requests and tagged bench builds could be as small as I liked. Field steps had to be few, and each one safe.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="measured">
+        <h2 id="measured">What I measured</h2>
+        <div class="section-body">
+          <h3>A catalogue with stable IDs</h3>
+          <p>I wrote every change into a catalogue of 150 entries in lettered groups. Each entry has an ID that the release plan, the test plan, the client deck and the release notes all share. The catalogue grew to 166 entries within two weeks.</p>
+
+          <h3>An assessment rule that holds up</h3>
+          <p>My first pass rejected 99 changes for the field line. A re-test against the field source found 41 of those rejections wrong. The first pass had asked whether a fault had been seen in the field. The better test asks whether the defect is provable in the source and inert without its trigger. I then attacked my own promotions twice and found defects in 9 of them.</p>
+
+          <h3>The biggest saving needed no release</h3>
+          <p>Payload compression was supported, but its only caller hard-coded it off. At 500 tags an upload is 26.4 KB raw and 4.9 KB compressed, which per device comes to 38 MB a day against 7 MB. That saving repays the data cost of the whole OTA campaign in about 15 hours. Turning it on needed one thing: the client confirming its ingest accepts compressed bodies.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="changed">
+        <h2 id="changed">What I changed</h2>
+        <div class="section-body">
+          <h3>Releases as a menu</h3>
+          <p>Each release got a fixed kind (patch, minor, major, or joint work with the client) and stated dependencies. The client set the order, and I recommended patches first for small early wins. Version numbers came last, once the order was agreed.</p>
+          <p>Fourteen theme-sized slots then collapsed into four releases to cut the number of QA cycles. Anything that needed the client, such as a confirmation, a decision or backend work, went into its own final step, so no release waited on someone else's calendar.</p>
+
+          <h3>Gates before production</h3>
+          <figure class="figure">
+            <figcaption>The path every release takes</figcaption>
+            <ol class="flow">
+              <li><strong>Candidates</strong><span>Numbered catalogue entries; the client sets scope and order</span></li>
+              <li><strong>Bench</strong><span>Test plan cases, measurements inside their thresholds, a rollback rehearsal</span></li>
+              <li><strong>QA units</strong><span>Every test row passes in QA</span></li>
+              <li><strong>Production canary</strong><span>The canary rows pass again</span></li>
+              <li><strong>Fleet</strong><span>Rollout once the gate workbook is complete</span></li>
+            </ol>
+          </figure>
+          <p>With no rollback, every release had to pass a bench rollback rehearsal. A gate workbook decided promotion: every test row passes in QA, the canary rows pass again on the canary, and every bench measurement stays inside its threshold. The test plans used Given/When/Then cases, positive and negative.</p>
+          <p>The gate removed scope as well as adding it. A downgrade guard on the candidate refused the twin rollback to the previous release, the one remote recovery lever the test plan rehearses. I reverted it before QA and later dropped it from the plan.</p>
+
+          <h3>QA rollout</h3>
+          <p>The QA image went to four QA units. The production image and the release tag stayed untouched until the bench pass. The bench earned its place on the first day: a number typed into a twin field that the firmware expected as a string crash-looped the unit every 45 seconds. The fix reached the QA units the same day, and no production unit ever ran that build.</p>
+          <p>Rollout also exposed a deployment trap. A unit already running a label ignores a rebuilt image with the same label, so each QA rebuild meant bouncing units through the previous release and back.</p>
+
+          <h3>Release notes that describe the release</h3>
+          <p>I numbered the next release's candidates 1 to 30, later 1 to 35, and used the same numbers on the client deck and in the notes, so the client could record a decision against each number.</p>
+          <p>The notes follow one rule: they say what the release does. Each item states the wrong behavior, its cost and the change. Plan history, past decisions and open investigations go in the deck. The notes list only rows that are built or proven.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="result">
+        <h2 id="result">Result</h2>
+        <div class="section-body">
+          <p>The field release passed its QA gate with 42 of 42 test cases in October 2026 and runs on the QA units. Production rollout was still pending at the time of writing, so I have no production result to report yet.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="differently">
+        <h2 id="differently">What I'd do differently</h2>
+        <div class="section-body">
+          <ul>
+            <li><strong>Put a build number in every label.</strong> The same-label skip cost a bounce through the previous release on every QA rebuild. A unique label per build removes the trap.</li>
+            <li><strong>Fix rollback before features.</strong> The missing OTA rollback drove the rehearsal gate and the small number of field steps. A bootloader that can roll back makes every later release cheaper to ship.</li>
+            <li><strong>Write the notes rule down on day one.</strong> One draft of the notes carried plan and decision history and needed a rewrite.</li>
+            <li><strong>Target the canary by twin tag.</strong> IoT Hub automatic device configurations already target devices by twin tag and roll back by changing the condition. The missing piece is a tag scheme.</li>
+          </ul>
+        </div>
+      </section>
+    </article>
+
+    <nav class="case-nav" aria-label="Case studies">
+      <a href="vision-pick-audit.html">Previous: Checking picks with a camera</a>
+      <a href="../#case-studies">All case studies</a>
+    </nav>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <p>© 2026 Jack Hall</p>
+      <p><a href="mailto:johnragonhall@gmail.com">johnragonhall@gmail.com</a></p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checking picks with a camera | Jack Hall</title>
+  <meta name="description" content="A computer vision case study: measuring pick accuracy by hand, then training a camera model to count and tell apart near-identical items on a tray.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="../">jack hall</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../#projects">Projects</a></li>
+          <li><a href="../#case-studies">Case studies</a></li>
+          <li><a href="../#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap case">
+    <article>
+      <header class="case-head">
+        <p class="kicker">Case study · Computer vision</p>
+        <h1>Checking pick accuracy with a camera model</h1>
+        <p class="dek">A cold-chain distribution site wanted cameras to catch mispicks. We measured how accurate picking was first, then trained a model to count and tell apart seven look-alike items on a tray.</p>
+        <dl class="facts">
+          <div><dt>Role</dt><dd>Process design, computer vision and data lead (consultant)</dd></div>
+          <div><dt>When</dt><dd>Readout in April 2023</dd></div>
+          <div><dt>Scope</dt><dd>Manual accuracy audit, camera model training and testing, picking process review</dd></div>
+        </dl>
+      </header>
+
+      <section class="section" aria-labelledby="context">
+        <h2 id="context">Context</h2>
+        <div class="section-body">
+          <p>A logistics fleet operator runs temperature-controlled distribution for a food-service retail customer. At the pilot site, pickers fill plastic trays with wrapped chilled items for each store order, guided by a voice-picking system. A mispick reaches the store as a complaint, and complaints carry penalties.</p>
+          <p>The proof of concept asked whether an overhead camera could count each tray and flag a wrong pick before the order shipped. We presented the readout to the client in April 2023.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="problem">
+        <h2 id="problem">Problem</h2>
+        <div class="section-body">
+          <p>The pilot site's picking process was not defined well enough to drop a camera in without disrupting daily operations. We narrowed the scope to three questions: can a model learn to count the items and tell them apart, how accurate is picking today, and how much error could camera auditing remove.</p>
+          <p>The second question decides whether the first one matters. A camera that is right 99 times in 100 has nothing to catch if the pickers are already that good.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="measured">
+        <h2 id="measured">What we measured</h2>
+        <div class="section-body">
+          <h3>The picking baseline</h3>
+          <p>We audited 166 store orders by hand after picking: 1,489 trays and 23,596 items, each checked against the ordered quantity and the packing rules. The audit found 309 errors.</p>
+          <p>Per item, pickers were right 98.7% of the time. Per order, which is what a store sees, 72.0% of orders were correct in full. Packing compliance was lower: 80.3% of trays met the rules, and 19.8% of orders met them in full. The most common violation was too many items in one tray.</p>
+          <p>A per-item rate near 99% still left more than a quarter of orders wrong. One mechanism spoils a whole order at once. Pickers sign on to an order by reading out its number, and a swapped digit can produce a valid number for a different order. A review of related issues found 125 to 130 similar incidents in the previous 12 months.</p>
+
+          <h3>The camera model</h3>
+          <p>We trained the model in four steps: trays holding one item type, then mixed trays that followed the packing rules, then a test with no intervention, then rounds of run, analyze, correct and repeat. The questions were whether it could count in a cold room, recognize each item, and separate items in near-identical clear wrappers.</p>
+          <p>Training used 6,761 images, and the model processes a tray in under a second.</p>
+
+          <figure class="figure">
+            <figcaption>Model versions on their test sets</figcaption>
+            <table class="data">
+              <thead>
+                <tr><th scope="col">Version</th><th scope="col" class="r">Orders</th><th scope="col" class="r">Orders exact</th><th scope="col" class="r">Items exact</th><th scope="col"><span class="visually-hidden">Orders exact, as a bar</span></th></tr>
+              </thead>
+              <tbody>
+                <tr><th scope="row">v1</th><td class="r">44</td><td class="r">65.91%</td><td class="r">99.69%</td><td class="bar" aria-hidden="true"><span style="--w: 65.91%"></span></td></tr>
+                <tr><th scope="row">v2</th><td class="r">41</td><td class="r">82.93%</td><td class="r">99.86%</td><td class="bar" aria-hidden="true"><span style="--w: 82.93%"></span></td></tr>
+                <tr><th scope="row">v3</th><td class="r">85</td><td class="r">88.24%</td><td class="r">99.91%</td><td class="bar" aria-hidden="true"><span style="--w: 88.24%"></span></td></tr>
+                <tr><th scope="row">v4</th><td class="r">35</td><td class="r">91.4%</td><td class="r">99.86%</td><td class="bar" aria-hidden="true"><span style="--w: 91.4%"></span></td></tr>
+                <tr><th scope="row">v5</th><td class="r">85</td><td class="r">94.1%</td><td class="r">99.96%</td><td class="bar" aria-hidden="true"><span style="--w: 94.1%"></span></td></tr>
+              </tbody>
+            </table>
+          </figure>
+
+          <p>Versions three and five ran on the same 85 orders, 1,473 trays and 23,166 items, so that step is a clean comparison: exact orders rose from 88.24% to 94.1%. The other versions ran on smaller, different samples.</p>
+
+          <h3>Where the model failed</h3>
+          <p>Three quarters of the model's errors came from trays that broke the packing rules, with items stacked so the camera could not see them. The model missed items it could not see, and it sometimes misclassified a half-hidden item.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="changed">
+        <h2 id="changed">What we changed</h2>
+        <div class="section-body">
+          <p>The data pointed at the process before the hardware. A camera can audit only a tray it can see, and about one tray in five broke the rules that keep items visible.</p>
+          <ul>
+            <li>We recommended designing the picking process with live camera auditing built in, and offered a limited rollout on the current process as the alternative.</li>
+            <li>We logged 19 improvement initiatives from the audit and scored each one on five factors: the customer's service principles, its SLA metrics, financial benefit, ease of implementation and future readiness. Ten of them fit inside the picking design.</li>
+            <li>For the sign-on errors: scan a barcode on the order sheet instead of reading the number aloud, and later have the warehouse system feed each picker the next order.</li>
+            <li>For overpacked trays: pickers guessed how many trays an order needed and overfilled them to save trips. Printing the tray count on the order sheet from the warehouse system attacks the violation that hides items from the camera.</li>
+            <li>For look-alike items: ask the supplier for distinct colors or markings on each wrapper, which also shortens training for new items.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="result">
+        <h2 id="result">Result</h2>
+        <div class="section-body">
+          <p>On its final test the model got 99.96% of item counts and 94.1% of order counts right, in a temperature-controlled room, at under a second per tray.</p>
+          <p>Order accuracy rose from the 72.0% baseline to 94.1% with camera auditing, a gain of 22.1 points, and item-level accuracy rose from 98.7% to 99.9%. The camera caught overages and shortages that hand picking let through to the store.</p>
+          <p>On those results we recommended building live camera auditing into a redesigned picking process, with a limited rollout on the current process as the alternative. The sources end at the readout, and I have no record of which option the client chose.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="differently">
+        <h2 id="differently">What I'd do differently</h2>
+        <div class="section-body">
+          <ul>
+            <li><strong>Assess the process before scoping the technology.</strong> The pilot site's picking process differed from the site we visited first, and it had no defined pick process a camera could slot into, so the scope had to pivot after we arrived. A short process walk at the actual pilot site before the statement of work would have set that scope on day one.</li>
+            <li><strong>Run the baseline and the model on the same orders.</strong> The baseline audit and the final model test used different order samples, so the comparison carries sampling noise we never sized. A paired design with confidence intervals would size it.</li>
+            <li><strong>Hold one test set fixed across model versions.</strong> Three of the five versions ran on samples of 35 to 44 orders, so part of the version-to-version change is sample noise.</li>
+          </ul>
+        </div>
+      </section>
+    </article>
+
+    <nav class="case-nav" aria-label="Case studies">
+      <a href="field-diagnostics.html">Previous: Placing an upload failure</a>
+      <a href="release-structure.html">Next: Shipping fixes with no rollback</a>
+    </nav>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <p>© 2026 Jack Hall</p>
+      <p><a href="mailto:johnragonhall@gmail.com">johnragonhall@gmail.com</a></p>
+    </div>
+  </footer>
+</body>
+</html>
